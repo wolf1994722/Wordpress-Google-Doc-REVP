@@ -27,16 +27,16 @@ Author: Gifford Cheung, Brian Watanabe
 2. Fully customizable messages: "Thank you", "No match", "Oops"
 */
 
-/* Zend Gdata classes */
 $path = dirname(__FILE__);
 set_include_path(get_include_path() . PATH_SEPARATOR . $path);
 
-require_once 'Zend/Loader.php';
-Zend_Loader::loadClass('Zend_Http_Client');
-Zend_Loader::loadClass('Zend_Gdata');
-Zend_Loader::loadClass('Zend_Gdata_ClientLogin');
-Zend_Loader::loadClass('Zend_Gdata_Spreadsheets');
+require_once 'vendor/autoload.php';
 
+use Google\Spreadsheet\DefaultServiceRequest;
+use Google\Spreadsheet\ServiceRequestFactory;
+
+ini_set('display_errors', 'On');
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 function admin_wpgc_guestlist_options(){
 	?><div class="wrap"><h2>GoogleDocs Guestlist</h2><?php
@@ -51,12 +51,16 @@ function admin_wpgc_guestlist_options(){
 function update_wpgc_guestlist_options() {
 	$ok = false;
 
-        if($_REQUEST['wpgc_guestlist_google_username']) {
-        	update_option('wpgc_guestlist_google_username',$_REQUEST['wpgc_guestlist_google_username']);
+        if($_REQUEST['wpgc_guestlist_google_client_id']) {
+        	update_option('wpgc_guestlist_google_client_id',$_REQUEST['wpgc_guestlist_google_client_id']);
                 $ok = true;
         }
-        if($_REQUEST['wpgc_guestlist_google_password']) {
-        	update_option('wpgc_guestlist_google_password',$_REQUEST['wpgc_guestlist_google_password']);
+        if($_REQUEST['wpgc_guestlist_google_client_secret']) {
+        	update_option('wpgc_guestlist_google_client_secret',$_REQUEST['wpgc_guestlist_google_client_secret']);
+                $ok = true;
+        }
+        if($_REQUEST['wpgc_guestlist_google_redirect_uri']) {
+            update_option('wpgc_guestlist_google_redirect_uri',$_REQUEST['wpgc_guestlist_google_redirect_uri']);
                 $ok = true;
         }
         if($_REQUEST['wpgc_guestlist_google_spreadsheet_name']) {
@@ -119,8 +123,9 @@ function update_wpgc_guestlist_options() {
 }
 
 function print_wpgc_guestlist_form() {
-	$default_username = get_option('wpgc_guestlist_google_username');
-        $default_password = get_option('wpgc_guestlist_google_password');
+	$default_client_id = get_option('wpgc_guestlist_google_client_id');
+        $default_client_secret = get_option('wpgc_guestlist_google_client_secret');
+        $default_redirect_uri = get_option('wpgc_guestlist_google_redirect_uri');
         $default_spreadsheet = get_option('wpgc_guestlist_google_spreadsheet_name');
         $default_worksheet = get_option('wpgc_guestlist_google_worksheet_name');
         $default_email_address = get_option('wpgc_guestlist_wedding_planner_email_address');
@@ -145,6 +150,38 @@ function print_wpgc_guestlist_form() {
 				$hotels[$i] = "Hotel Name";
 		}
 
+        if (isset($_GET['deauthorize'])) {
+          delete_option('google_api_access_token');
+        }
+
+        $perm_access_token = "";
+        if ($default_client_id && $default_client_secret && $default_redirect_uri) {
+            $client = new Google_Client();
+            $client->setClientId($default_client_id);
+            $client->setClientSecret($default_client_secret);
+            $client->setRedirectUri($default_redirect_uri);
+            $client->setScopes(array('https://spreadsheets.google.com/feeds'));
+            $client->setAccessType('offline');
+            $client->setApprovalPrompt('force');
+
+            if (isset($_GET['code'])) {
+              $client->authenticate($_GET['code']);
+              update_option('google_api_access_token',$client->getAccessToken());
+              unset($_GET['code']);
+              // Redirecting to same page without authorization code in query string
+              // Better done with HTTP header, but headers already sent by this point
+              $query_string = urldecode(http_build_query($_GET));
+              $redirect = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] . "?" . $query_string;
+              echo "<script>window.location.replace('" . $redirect . "');</script>";
+            }
+
+            $perm_access_token = get_option('google_api_access_token');
+            if (isset($perm_access_token) && $perm_access_token) {
+              $client->setAccessToken($perm_access_token);
+            } else {
+              $authUrl = $client->createAuthUrl();
+            }
+        }
 		
         /* VERSION 2.0
         $default_toggle_ceremony = get_option('wpgc_guestlist_toggle_ceremony');
@@ -165,14 +202,33 @@ function print_wpgc_guestlist_form() {
 		</script>
 		
         <form method="post">
-        	<label for="wpgc_guestlist_google_username">Google Username:
-              	<input type="text" name="wpgc_guestlist_google_username" value="<?=$default_username?>" />
-                </label><i>Your Google account username with access to wedding spreadsheet</i>
+        	<label for="wpgc_guestlist_google_client_id">Google client ID:
+              	<input type="text" name="wpgc_guestlist_google_client_id" value="<?=$default_client_id?>" />
+                </label><i>Your Google project client ID</i>
                 <br />
                 <br />
-                <label for="wpgc_guestlist_google_password">Google Password:
-              	<input type="password" name="wpgc_guestlist_google_password" value="<?=$default_password?>" />
-                </label><i>Your Google password</i>
+                <label for="wpgc_guestlist_google_client_secret">Google client secret:
+              	<input type="text" name="wpgc_guestlist_google_client_secret" value="<?=$default_client_secret?>" />
+                </label><i>Your Google project client password</i>
+                <br />
+                <br />
+                <label for="wpgc_guestlist_google_redirect_uri">Google redirect URI:
+                <input type="text" name="wpgc_guestlist_google_redirect_uri" value="<?=$default_redirect_uri?>" />
+                </label><i>Your Google project redirect URI</i>
+                <div class="box">
+                    <div class="request">
+                <?php
+                if ($client && isset($authUrl)) {
+                    echo "<a class='login' href='" . $authUrl . "'>Authorize this plugin to Google</a>";
+                } elseif ($client) {
+                    echo "<span>You have authorized the plugin!</span>";
+                    echo "<a class='logout' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize this plugin</a>";
+                } else {
+                    echo "<span>Fill in the values above to set up access to your Google spreadsheet</span>";
+                }
+                ?>
+                    </div>
+                </div>
                 <br />
                 <br />
                 <label for="wpgc_guestlist_google_spreadsheet_name">Google Spreadsheet Name:
@@ -249,7 +305,7 @@ function modify_menu() {
         		'GoogleDocs Guestlist',	//page title
                         'GoogleDocs Guestlist',	//subpage title
                         'manage_options',	//access
-                        '__FILE__',		//current file
+                        __FILE__,		//current file
                         'admin_wpgc_guestlist_options'	//options function above
                         );
 }
@@ -265,19 +321,21 @@ function wpgc_clean( $value , $strip = true) {
 }
 
 /*
-Function: wpgc_connect
+Function: wpgc_prepare_access_token
 
-Helper function to connect to the Google docs spreadsheet.
-returns the google docs client object.
+Helper function to ensure the access token is valid for the listFeed function
 
 */
-function wpgc_connect_get_client($user, $pass) {
-	// Connect to your account
-	$authService = Zend_Gdata_Spreadsheets::AUTH_SERVICE_NAME;
-	$httpClient = Zend_Gdata_ClientLogin::getHttpClient($user, $pass, $authService);
-	$gdClient = new Zend_Gdata_Spreadsheets($httpClient);
-
-	return $gdClient;
+function wpgc_prepare_access_token($client_id, $client_secret, $access_token) {
+    $client = new Google_Client();
+    $client->setClientId($client_id);
+    $client->setClientSecret($client_secret);
+    $client->setAccessToken($access_token);
+    if ($client->isAccessTokenExpired()) {
+        $refresh_token = $client->getRefreshToken();
+        $client->refreshToken($refresh_token);
+        update_option('google_api_access_token', $client->getAccessToken());
+    }
 }
 
 
@@ -288,50 +346,25 @@ This is a helper function. It connects to the Google docs spreadsheet, finds the
 TODO: Order the entries by some order
 
 */
-function wpgc_get_listFeed_for_guestcode($gdClient, $spreadsheet_name,$worksheet_name, $guest_code) {
-	// Some variables
-	$spreadsheet_key = '';
-	$worksheet_key = '';
-
-	// Find your spreadsheet id
-	$feed = $gdClient->getSpreadsheetFeed('http://spreadsheets.google.com/feeds/spreadsheets/private/full');
-	foreach($feed->entries as $entry) {
-		if ($entry->title->text == $spreadsheet_name) {
-			$id = split('/', $entry->id->text);
-			$spreadsheet_key = $id[7];
-		}
-	}
-
-	// Connect to your spreadsheet
-		$query = new Zend_Gdata_Spreadsheets_DocumentQuery();
-		$query->setSpreadsheetKey($spreadsheet_key);
-		$feed = $gdClient->getWorksheetFeed($query);
-	
-	// Find your worksheet id that matches your title (hopefully a unique one)
-		$i = 0;
-		foreach($feed->entries as $entry) {
-			if (
-				(empty($worksheet_name) && $i == 00) ||
-				(!empty($worksheet_name) && strcmp($entry->title->text,$worksheet_name)==0 )
-			) {
-				$id = split('/', $entry->id->text);
-				$worksheet_key = $id[8];
-			}
-			$i++;
-		}
-
-	// Run Query
-		$query = new Zend_Gdata_Spreadsheets_ListQuery();
-		$query->setSpreadsheetKey($spreadsheet_key);
-		$query->setWorksheetId($worksheet_key);
-		$query->setSpreadsheetQuery('code="'.$guest_code.'"'); // TODO: INJECTION threats?
-		return $gdClient->getListFeed($query);
+function wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code) {
+    $accessTokenObj = json_decode($access_token, true);
+    $serviceRequest = new DefaultServiceRequest($accessTokenObj['access_token']);
+    ServiceRequestFactory::setInstance($serviceRequest);
+    $spreadsheetService = new Google\Spreadsheet\SpreadsheetService();
+    $spreadsheetFeed = $spreadsheetService->getSpreadsheets();
+    $spreadsheet = $spreadsheetFeed->getByTitle($spreadsheet_name);
+    $worksheetFeed = $spreadsheet->getWorksheets();
+    $worksheet = $worksheetFeed->getByTitle($worksheet_name);
+    $listFeed = $worksheet->getListFeed(array("sq" => "code=".$guest_code));
+    return $listFeed;
 }
 
 /*
 Name: wpgc_parse_entry
 
 Extract the values we care about from a listfeedentry
+
+TODO: Currently unused, not necessary?
 
 */
 function wpgc_parse_entry($listFeedEntry) {
@@ -368,8 +401,10 @@ function wpgc_my_googledocsguestlist ($text) {
 
 
         // Key variables
-        $user = get_option('wpgc_guestlist_google_username');
-        $pass = get_option('wpgc_guestlist_google_password');
+        $client_id = get_option('wpgc_guestlist_google_client_id');
+        $client_secret = get_option('wpgc_guestlist_google_client_secret');
+        $access_token = get_option('google_api_access_token');
+
         $spreadsheet_name = get_option('wpgc_guestlist_google_spreadsheet_name');
         $worksheet_name = get_option('wpgc_guestlist_google_worksheet_name');
         $wedding_planner_email_address = get_option('wpgc_guestlist_wedding_planner_email_address');
@@ -387,13 +422,13 @@ function wpgc_my_googledocsguestlist ($text) {
 
 
         //Configuration check
-        if (!$user || !$pass || !$spreadsheet_name || !$worksheet_name || !$wedding_planner_email_address) {
+        if (!$client_id || !$client_secret || !$access_token || !$spreadsheet_name || !$worksheet_name || !$wedding_planner_email_address) {
         	return "This plugin has not been fully configured.  Please fill out all the entries under Settings->GoogleDocs Guestlist.";
         }
 
         $spreadsheet_key = '';
 	$worksheet_key = '';
-	$guest_code = $_POST['code'];
+	$guest_code = $_POST['guest_code'];
 	$outputtext = '';
 	$abort_and_reprint_form = false;
 
@@ -407,13 +442,14 @@ function wpgc_my_googledocsguestlist ($text) {
 		case ('update'): 
 			// (A) Save to the database
 			try {
-				// Connect and retrieve the listFeed for your guestcode
-				$gdClient = wpgc_connect_get_client($user, $pass);
-				$listFeed = wpgc_get_listFeed_for_guestcode($gdClient, $spreadsheet_name, $worksheet_name, $guest_code);
+				// Prepare access token and retrieve the listFeed for your guestcode
+                wpgc_prepare_access_token($client_id, $client_secret, $access_token);
+				$listFeed = wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
 				
 				// CHECK, did they already fill out the form?
-				foreach ($listFeed->entries as $e) {
-					$entry = wpgc_parse_entry($e);
+                $entries = $listFeed->getEntries();
+				foreach ($entries as $e) {
+					$entry = $e->getValues();
 					if ($entry['ceremony'] || $entry['banquet']) {
 						$abort_and_reprint_form = true;
 						break;
@@ -434,14 +470,15 @@ function wpgc_my_googledocsguestlist ($text) {
 				$your_hotel = '';
 				$your_message = '';
 				
-				if ($listFeed->count() == 0) {
+				if (count($entries) == 0) {
 					$abort_and_reprint_form = true;
 					break;
 				}
 				// Construct
-				for ($i=0; $i < $listFeed->count(); $i+=1) {
+				for ($i=0; $i < count($entries); $i+=1) {
 					// Grab the data from the http post and construct the array
-					$newentry = array();					
+					$listEntry = $entries[$i];
+                    $newentry = $listEntry->getValues();
 					if (isset($_POST['guestname'.$i])) {
 						$newentry["guestname"] = stripslashes($_POST['guestname'.$i]);
 					}
@@ -475,14 +512,9 @@ function wpgc_my_googledocsguestlist ($text) {
 					
 					// GO! Update the spreadsheet!
 					// What if it fails? I suppose an exception gets thrown...
-					$entry = $gdClient->updateRow($listFeed->entries[$i], $newentry);	
-					/*if !($entry instanceof Zend_Gdata_Spreadsheets_ListEntry) {
-						//echo "Fail"
-						throw new Something Exception
-					}
-					*/
+					$listEntry->update($newentry);
 					
-					$checked_entry = wpgc_parse_entry($entry);
+					$checked_entry = $newentry;
 					if ($i == 0) {
 						$your_message = $checked_entry["messagefromguest"];
 					}
@@ -581,22 +613,23 @@ function wpgc_my_googledocsguestlist ($text) {
                 $headers = 'From: '.$wedding_planner_email_address;
                 mail($wedding_planner_email_address, $subject, $emailreport, $headers);
 
-			} catch (Zend_Gdata_App_Exception $e) {
+			} catch (Exception $e) {
 				$outputtext .= "<b>Oops, there was a small glitch.</b> Please try again, or contact ". $wedding_planner ." directly.";
-				//$outputtext .= $e->getMessage() . " " . $e->getTraceAsString();
+				$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
 			}
 		break;	
 		
 		case('edit'):
 		try {
 		// Connect and retrieve the listFeed for your guestcode
-			$gdClient = wpgc_connect_get_client($user, $pass);
-			$listFeed = wpgc_get_listFeed_for_guestcode($gdClient, $spreadsheet_name, $worksheet_name, $guest_code);
+            wpgc_prepare_access_token($client_id, $client_secret, $access_token);
+			$listFeed = wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
 
 			$already_replied = false;
 			// CHECK, did they already fill out the form?
-			foreach ($listFeed->entries as $e) {
-				$entry = wpgc_parse_entry($e);
+            $entries = $listFeed->getEntries();
+            foreach ($entries as $e) {
+                $entry = $e->getValues();
 				if ($entry['ceremony'] || $entry['banquet']) {
 					$already_replied = true;
 					break;
@@ -604,17 +637,17 @@ function wpgc_my_googledocsguestlist ($text) {
 			}
 
 			// Careful... entries might be an empty set
-			if ($listFeed->count() > 0 && !$already_replied) {
+			if (count($entries) > 0 && !$already_replied) {
 				// SUCCESS: We found a party 
 				$plural = '';
-				if ($listFeed->count() != 1) $plural = "s"; 
-				$outputtext .= "Thank you for replying online. We look forward to celebrating with you all! Please indicate whether each member of your party will be attending our wedding day events.<br/><br/><b>We have reserved ".$listFeed->count()." seat".$plural." in your honor.</b><br/>";
+				if (count($entries) != 1) $plural = "s"; 
+				$outputtext .= "Thank you for replying online. We look forward to celebrating with you all! Please indicate whether each member of your party will be attending our wedding day events.<br/><br/><b>We have reserved ".count($entries)." seat".$plural." in your honor.</b><br/>";
 				// Initializing the form. And yes, it is one massive form for the whole page. We differentiate among the attendees by adding an index number after each input 'name', e.g. guestname3
 				$outputtext .= '<form style="text-align: left" action="'.get_permalink().'" method="post">';
 
 				// We use a for loop here because the index i is important to keep as a row identifier when we update the row information later.
-				for ($i = 0; $i < $listFeed->count(); $i +=1) {
-					$entry = wpgc_parse_entry($listFeed->entries[$i]);
+				for ($i = 0; $i < count($entries); $i +=1) {
+					$entry = $entries[$i]->getValues();
 
 					// Populating the sub-parts of the form for each guest
 					$outputtext .= '<b>'.($i+1).'. Name:</b> <input name="guestname'.$i.'" type="text" value="'. htmlspecialchars($entry["guestname"],ENT_QUOTES).'"/>';
@@ -668,7 +701,7 @@ function wpgc_my_googledocsguestlist ($text) {
 				// Closing the form
 				$outputtext .= "\n";
 				$outputtext .= "<input type='hidden' name='motion' value='update'/>";
-				$outputtext .= "<input type='hidden' name='code' value='". htmlspecialchars($guest_code,ENT_QUOTES)."'/>";
+				$outputtext .= "<input type='hidden' name='guest_code' value='". htmlspecialchars($guest_code,ENT_QUOTES)."'/>";
 				$outputtext .= "<br/>\n";
 				$outputtext .= "<button type='Submit'>Send my RSVP</button>";
 				$outputtext .= " <a href='".get_permalink()."'>Cancel, I will reply later.</a>";
@@ -679,15 +712,15 @@ function wpgc_my_googledocsguestlist ($text) {
 				$outputtext .= 'Please type in the code from your wedding invitation below:<br/>';
 				$outputtext .= '<form style="text-align: left" action="'.get_permalink().'" method="post">';
 				$outputtext .= '<input type="hidden" name="motion" value="edit"/>';
-				$outputtext .= '<input type="text" name="code" /> ';
+				$outputtext .= '<input type="text" name="guest_code" /> ';
 				$outputtext .= '<button type="Submit">Submit</button>';
 				$outputtext .= '</form>';
 			}
 
-		} catch (Zend_Gdata_App_Exception $e) {
+		} catch (Exception $e) {
 			$outputtext .= "Oops. You found an error. Please try again or contact " . $wedding_planner . " at <a href='". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.";
 			//$outputtext .= "[There was a error. Please consult the source code or an experienced programmer. :( ]";
-			//$outputtext .= $e->getMessage() . " " . $e->getTraceAsString();
+			$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
 		}
 		break;
 	} //endswitch on post motion  
@@ -697,7 +730,7 @@ function wpgc_my_googledocsguestlist ($text) {
 		$outputtext .= "Please type in the code from your wedding invitation below:<br/>";
 		$outputtext .= "<form style='text-align: left' action='".get_permalink()."' method='post'>";
 		$outputtext .= "<input type='hidden' name='motion' value='edit'/>";
-		$outputtext .= "<input type='text' name='code' /> ";
+		$outputtext .= "<input type='text' name='guest_code' /> ";
 		$outputtext .= "<button type='Submit'>Submit</button>";
 		$outputtext .= "</form>";
 		
@@ -711,7 +744,7 @@ function wpgc_my_googledocsguestlist ($text) {
 		$outputtext .= "Please type in the code from your wedding invitation below:<br/>";
 		$outputtext .= "<form style='text-align: left' action='".get_permalink()."' method='post'>";
 		$outputtext .= "<input type='hidden' name='motion' value='edit'/>";
-		$outputtext .= "<input type='text' name='code' /> ";
+		$outputtext .= "<input type='text' name='guest_code' /> ";
 		$outputtext .= "<button type='Submit'>Submit</button>";
 		$outputtext .= "</form>";
 	}
