@@ -428,7 +428,7 @@ function wpgc_my_googledocsguestlist ($text) {
 
         $spreadsheet_key = '';
 	$worksheet_key = '';
-	$guest_code = $_POST['guest_code'];
+	$guest_code = $_POST['guest_code'] ? $_POST['guest_code'] : '';
 	$outputtext = '';
 	$abort_and_reprint_form = false;
 
@@ -490,9 +490,6 @@ function wpgc_my_googledocsguestlist ($text) {
 					}
 					if (isset($_POST['custommessageforguest'.$i])) {
 						$newentry["custommessageforguest"] = stripslashes($_POST['custommessageforguest'.$i]);
-					}
-					if (isset($_POST['messagefromguest'.$i])) {
-						$newentry["messagefromguest"] = stripslashes($_POST['messagefromguest'.$i]);
 					}
 					// for the hotel information, we'll only add it to the entry if they are attending either the banquet or the ceremony
 					if ($hotelon) {
@@ -622,6 +619,10 @@ function wpgc_my_googledocsguestlist ($text) {
 		case('edit'):
 		try {
 		// Connect and retrieve the listFeed for your guestcode
+            if (strcmp($guest_code,'') == 0) {
+                $abort_and_reprint_form = true;
+                break;
+            }
             wpgc_prepare_access_token($client_id, $client_secret, $access_token);
 			$listFeed = wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
 
