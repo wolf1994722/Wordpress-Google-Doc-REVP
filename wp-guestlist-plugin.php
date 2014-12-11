@@ -38,8 +38,186 @@ use Google\Spreadsheet\ServiceRequestFactory;
 ini_set('display_errors', 'On');
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+function register_settings_fields() {
+    add_settings_section(
+        'gdrsvp_main_section',
+        'Main Settings',
+        false,
+        __FILE__
+    );
+
+    add_settings_field(
+        'wpgc_guestlist_google_client_id',
+        'Google Client ID',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_google_client_id',
+            'description' => 'Your Google project client ID'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_client_id');
+    add_settings_field(
+        'wpgc_guestlist_google_client_secret',
+        'Google Client Secret',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_google_client_secret',
+            'description' => 'Your Google project client secret'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_client_secret');
+    add_settings_field(
+        'wpgc_guestlist_google_redirect_uri',
+        'Google Redirect URI',
+        'show_settings_label_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_google_redirect_uri',
+            'description' => 'Your Google project redirect URI (paste this into your Google Cloud Console)'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_redirect_uri');
+    add_settings_field(
+        'wpgc_guestlist_google_spreadsheet_name',
+        'Google Spreadsheet Name',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_google_spreadsheet_name',
+            'description' => 'The name of your spreadsheet'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_spreadsheet_name');
+    add_settings_field(
+        'wpgc_guestlist_google_worksheet_name',
+        'Google Worksheet Name',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_google_worksheet_name',
+            'description' => 'The name of your worksheet (e.g. Sheet1)'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_worksheet_name');
+    add_settings_field(
+        'wpgc_guestlist_wedding_planner_name',
+        'Wedding Planner Name',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_wedding_planner_name',
+            'description' => 'Name of person to contact directly for questions, confirmations, or problems... (e.g. Bernard and Alice)'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_wedding_planner_name');
+    add_settings_field(
+        'wpgc_guestlist_wedding_planner_email_address',
+        'Wedding Planner Email Address',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_wedding_planner_email_address',
+            'description' => 'This account will be emailed every time there is a new RSVP (assuming your WordPress site is configured to send email)'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_wedding_planner_email_address');
+    add_settings_field(
+        'wpgc_guestlist_hotel_reservation_name',
+        'Hotel Reservation Name',
+        'show_settings_text_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_hotel_reservation_name',
+            'description' => 'Name or party under which the hotels are reserved'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_hotel_reservation_name');
+    add_settings_field(
+        'wpgc_guestlist_toggle_hotel',
+        'Ask Guests for Hotel Information',
+        'show_settings_radio_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_toggle_hotel'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_toggle_hotel');
+    add_settings_field(
+        'wpgc_guestlist_num_hotels',
+        'Number of Hotels',
+        'show_settings_hotels_field',
+        __FILE__,
+        'gdrsvp_main_section',
+        array(
+            'field_name' => 'wpgc_guestlist_num_hotels',
+            'sub_div_name' => 'wpgc_guestlist_hotel_forms',
+            'sub_field_name' => 'wpgc_guestlist_hotel'
+        )
+    );
+    register_setting('gdrsvp_main_section', 'wpgc_guestlist_num_hotels');
+}
+
+function show_settings_text_field($args) {
+    $saved_value = get_option( $args['field_name'] );
+    echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" class="regular-text" />';
+    if (!empty($args['description'])) {
+        echo '<p class="description">' . $args['description'] . '</p>';
+    } 
+}
+
+function show_settings_label_field($args) {
+    $saved_value = get_option( $args['field_name'] );
+    echo '<code>' . $saved_value . '</code>';
+    echo '<input type="hidden" name="' . $args['field_name'] . '" value="'.$saved_value.'" />';
+    if (!empty($args['description'])) {
+        echo '<p class="description">' . $args['description'] . '</p>';
+    } 
+}
+
+function show_settings_radio_field($args) {
+    $saved_value = get_option( $args['field_name'] );
+    if (strcmp($saved_value,"true") == 0) {
+        $true_on = 'checked="checked"';
+    } else {
+        $false_on = 'checked="checked"';
+    }
+    echo '<input type="radio" name="' . $args['field_name'] . '" value="true" ' . $true_on . ' />On ';
+    echo '<input type="radio" name="' . $args['field_name'] . '" value="false" ' . $false_on . ' />Off';
+}
+
+function show_settings_hotels_field($args) {
+    $saved_value = get_option( $args['field_name'] );
+    if (!$saved_value) {
+        $saved_value = 2;
+    }
+    echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" /> ';
+    echo '<input type="submit" name="submit" class="button button-primary" value="Update" /><br />';
+    echo '<div id="' . $args['sub_div_name'] . '">';
+    $hotels = array();
+    for ($i = 0; $i < $saved_value; $i+=1) {
+        $hotels[$i] = htmlspecialchars(get_option($args['sub_field_name'].$i),ENT_QUOTES);
+        echo 'Hotel #' . ($i+1);
+        echo '<input type="text" name="' . $args['sub_field_name'] . $i . '" value="' . $hotels[$i] . '" /><br />';
+    }
+    echo '</div>';
+    if (!empty($args['description'])) {
+        echo '<p class="description">' . $args['description'] . '</p>';
+    } 
+}
+
 function admin_wpgc_guestlist_options() {
-    ?><div class="wrap"><h2>GoogleDocs Guestlist</h2><?php
+    ?><div class="wrap"><h2>Google Docs RSVP</h2><?php
     if ($_REQUEST['submit']) {
         update_wpgc_guestlist_options();
     }
@@ -78,8 +256,8 @@ function update_wpgc_guestlist_options() {
         update_option('wpgc_guestlist_hotel_reservation_name',$_REQUEST['wpgc_guestlist_hotel_reservation_name']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_wedding_planner']) {
-        update_option('wpgc_guestlist_wedding_planner',$_REQUEST['wpgc_guestlist_wedding_planner']);
+    if ($_REQUEST['wpgc_guestlist_wedding_planner_name']) {
+        update_option('wpgc_guestlist_wedding_planner_name',$_REQUEST['wpgc_guestlist_wedding_planner_name']);
         $ok = true;
     }
     if ($_REQUEST['wpgc_guestlist_toggle_hotel']) {
@@ -120,30 +298,6 @@ function print_wpgc_guestlist_form() {
     $default_client_id = get_option('wpgc_guestlist_google_client_id');
     $default_client_secret = get_option('wpgc_guestlist_google_client_secret');
     $default_redirect_uri = get_option('wpgc_guestlist_google_redirect_uri');
-    $default_spreadsheet = get_option('wpgc_guestlist_google_spreadsheet_name');
-    $default_worksheet = get_option('wpgc_guestlist_google_worksheet_name');
-    $default_email_address = get_option('wpgc_guestlist_wedding_planner_email_address');
-    $default_hotel_reservation_name = get_option('wpgc_guestlist_hotel_reservation_name');
-    $default_wedding_planner = get_option('wpgc_guestlist_wedding_planner');
-    $default_toggle_hotel = get_option('wpgc_guestlist_toggle_hotel');
-    $hotelon = "";
-    $hoteloff = "";
-    if (strcmp($default_toggle_hotel,"true") == 0)
-        $hotelon = 'checked="checked"';
-    else
-        $hoteloff = 'checked="checked"';
-
-    $default_num_hotels = get_option('wpgc_guestlist_num_hotels');
-    if (!$default_num_hotels) {
-        $default_num_hotels = 2;
-    }
-    $hotels = array();
-    for ($i = 0; $i < $default_num_hotels; $i+=1) {
-        $hotels[$i] = htmlspecialchars(get_option('wpgc_guestlist_hotel'.$i),ENT_QUOTES);
-        if (!$hotels[$i]) {
-            $hotels[$i] = "Hotel Name";
-        }
-    }
 
     if (isset($_GET['deauthorize'])) {
       delete_option('google_api_access_token');
@@ -199,19 +353,8 @@ function print_wpgc_guestlist_form() {
         </script>
         
         <form method="post">
-            <label for="wpgc_guestlist_google_client_id">Google client ID:
-                <input type="text" name="wpgc_guestlist_google_client_id" value="<?=$default_client_id?>" />
-            </label><i>Your Google project client ID</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_google_client_secret">Google client secret:
-                <input type="text" name="wpgc_guestlist_google_client_secret" value="<?=$default_client_secret?>" />
-            </label><i>Your Google project client password</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_google_redirect_uri">Google redirect URI:
-                <input type="text" name="wpgc_guestlist_google_redirect_uri" value="<?=$default_redirect_uri?>" />
-            </label><i>Your Google project redirect URI</i>
+        <?php settings_fields(__FILE__); ?>
+        <?php do_settings_sections(__FILE__); ?>
             <div class="box">
                 <div class="request">
     <?php
@@ -226,57 +369,7 @@ function print_wpgc_guestlist_form() {
     ?>
                 </div>
             </div>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_google_spreadsheet_name">Google Spreadsheet Name:
-                <input type="text" name="wpgc_guestlist_google_spreadsheet_name" value="<?=$default_spreadsheet?>" />
-            </label><i>The name of your spreadsheet</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_google_worksheet_name">Google Worksheet Name:
-                <input type="text" name="wpgc_guestlist_google_worksheet_name" value="<?=$default_worksheet?>" />
-            </label><i>The name of your worksheet(e.g. Sheet1)</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_wedding_planner_email_address">Wedding Planner Email Address:
-                <input type="text" name="wpgc_guestlist_wedding_planner_email_address" value="<?=$default_email_address?>" />
-            </label><i>This account will be emailed every time there is a new RSVP</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_hotel_reservation_name">Hotel Reservation Name:
-                <input type="text" name="wpgc_guestlist_hotel_reservation_name" value="<?=$default_hotel_reservation_name?>" />
-            </label><i>Name or party the hotel(s) is(are) reserved under</i>
-            <br />
-            <br />
-            <label for="wpgc_guestlist_wedding_planner">Wedding Planner Name:
-                <input type="text" name="wpgc_guestlist_wedding_planner" value="<?=$default_wedding_planner?>" />
-            </label><i>Name of person to contact directly for questions, confirmations, or problems... (e.g. Bernard and Alice)</i>
-            <br />
-            <br />
-            <br />
-            <h3>RSVP Options:</h3>
-            <label for="wpgc_guestlist_toggle_hotel">Ask Guests for Hotel Information:<br />
-            <input type="radio" name="wpgc_guestlist_toggle_hotel" value="true" <?=$hotelon?> />On
-            <input type="radio" name="wpgc_guestlist_toggle_hotel" value="false" <?=$hoteloff?> />Off
-            <br />
             
-            <label for="wp_guestlist_num_hotels">Number of Hotels:
-                <input type="text" name="wpgc_guestlist_num_hotels" value="<?=$default_num_hotels?>" />
-            </label>
-            <input type="submit" name="submit" value="Update" />
-            <br />
-            <div id="wpgc_guestlist_hotel_forms">
-    <?php
-    for ($i = 0; $i < $default_num_hotels; $i+=1) {
-    ?>
-                <label for="wpgc_guestlist_hotel<?=$i?>">Hotel #<?=$i+1?>:
-                    <input type="text" name="wpgc_guestlist_hotel<?=$i?>" value="<?=$hotels[$i]?>" />
-                </label>
-                <br />
-    <?php
-    }
-    ?>
-            </div>
             
     <?php /* VERSION 3.0
     <a href="javascript:remove_hotel_form()">Remove Hotel</a>
@@ -291,15 +384,15 @@ function print_wpgc_guestlist_form() {
     */
     ?>
 
-            <input type="submit" name="submit" value="Submit" />
+        <?php submit_button(); ?>
         </form>
     <?php
 }
 
 function modify_menu() {
     add_options_page(
-        'GoogleDocs Guestlist',        //page title
-        'GoogleDocs Guestlist',        //subpage title
+        'Google Docs RSVP',        //page title
+        'Google Docs RSVP',        //subpage title
         'manage_options',              //access
         __FILE__,                      //current file
         'admin_wpgc_guestlist_options' //options function above
@@ -403,7 +496,7 @@ function wpgc_my_googledocsguestlist ($text) {
     $wedding_planner_email_address = get_option('wpgc_guestlist_wedding_planner_email_address');
 
     $hotel_reservation_name = get_option('wpgc_guestlist_hotel_reservation_name');
-    $wedding_planner = get_option('wpgc_guestlist_wedding_planner');
+    $wedding_planner = get_option('wpgc_guestlist_wedding_planner_name');
 
     $toggle_hotel = get_option('wpgc_guestlist_toggle_hotel');
     $hotelon = !(boolean)strcmp($toggle_hotel,"true");
@@ -758,6 +851,7 @@ function wpgc_my_googledocsguestlist ($text) {
     return $text;
 }
 
+add_action('admin_init', 'register_settings_fields');
 add_action('admin_menu', 'modify_menu');
 add_filter('the_content', 'wpgc_my_googledocsguestlist');
 ?>
