@@ -70,6 +70,9 @@ function register_settings_fields() {
         )
     );
     register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_client_secret');
+    // If redirect URI is not set, set it to full URL of plugin page
+    $schema = (@$_SERVER['HTTPS'] == "on") ? "https://" : "http://";
+    $current_url = $schema.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
     add_settings_field(
         'wpgc_guestlist_google_redirect_uri',
         'Google Redirect URI',
@@ -78,7 +81,8 @@ function register_settings_fields() {
         'gdrsvp_main_section',
         array(
             'field_name' => 'wpgc_guestlist_google_redirect_uri',
-            'description' => 'Your Google project redirect URI (paste this into your Google Cloud Console)'
+            'description' => 'Your Google project redirect URI (paste this into your Google Cloud Console)',
+            'default_value' => $current_url
         )
     );
     register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_redirect_uri');
@@ -162,14 +166,15 @@ function register_settings_fields() {
         array(
             'field_name' => 'wpgc_guestlist_num_hotels',
             'sub_div_name' => 'wpgc_guestlist_hotel_forms',
-            'sub_field_name' => 'wpgc_guestlist_hotel'
+            'sub_field_name' => 'wpgc_guestlist_hotel',
+            'default_value' => 2
         )
     );
     register_setting('gdrsvp_main_section', 'wpgc_guestlist_num_hotels');
 }
 
 function show_settings_text_field($args) {
-    $saved_value = get_option( $args['field_name'] );
+    $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" class="regular-text" />';
     if (!empty($args['description'])) {
         echo '<p class="description">' . $args['description'] . '</p>';
@@ -177,7 +182,7 @@ function show_settings_text_field($args) {
 }
 
 function show_settings_label_field($args) {
-    $saved_value = get_option( $args['field_name'] );
+    $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<code>' . $saved_value . '</code>';
     echo '<input type="hidden" name="' . $args['field_name'] . '" value="'.$saved_value.'" />';
     if (!empty($args['description'])) {
@@ -186,7 +191,7 @@ function show_settings_label_field($args) {
 }
 
 function show_settings_radio_field($args) {
-    $saved_value = get_option( $args['field_name'] );
+    $saved_value = get_option( $args['field_name'], $args['default_value'] );
     if (strcmp($saved_value,"true") == 0) {
         $true_on = 'checked="checked"';
     } else {
@@ -197,10 +202,7 @@ function show_settings_radio_field($args) {
 }
 
 function show_settings_hotels_field($args) {
-    $saved_value = get_option( $args['field_name'] );
-    if (!$saved_value) {
-        $saved_value = 2;
-    }
+    $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" /> ';
     echo '<input type="submit" name="submit" class="button button-primary" value="Update" /><br />';
     echo '<div id="' . $args['sub_div_name'] . '">';
@@ -228,56 +230,56 @@ function admin_wpgc_guestlist_options() {
 function update_wpgc_guestlist_options() {
     $ok = false;
 
-    if ($_REQUEST['wpgc_guestlist_google_client_id']) {
+    if (isset($_REQUEST['wpgc_guestlist_google_client_id'])) {
         update_option('wpgc_guestlist_google_client_id',$_REQUEST['wpgc_guestlist_google_client_id']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_google_client_secret']) {
+    if (isset($_REQUEST['wpgc_guestlist_google_client_secret'])) {
         update_option('wpgc_guestlist_google_client_secret',$_REQUEST['wpgc_guestlist_google_client_secret']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_google_redirect_uri']) {
+    if (isset($_REQUEST['wpgc_guestlist_google_redirect_uri'])) {
         update_option('wpgc_guestlist_google_redirect_uri',$_REQUEST['wpgc_guestlist_google_redirect_uri']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_google_spreadsheet_name']) {
+    if (isset($_REQUEST['wpgc_guestlist_google_spreadsheet_name'])) {
         update_option('wpgc_guestlist_google_spreadsheet_name',$_REQUEST['wpgc_guestlist_google_spreadsheet_name']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_google_worksheet_name']) {
+    if (isset($_REQUEST['wpgc_guestlist_google_worksheet_name'])) {
         update_option('wpgc_guestlist_google_worksheet_name',$_REQUEST['wpgc_guestlist_google_worksheet_name']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_wedding_planner_email_address']) {
+    if (isset($_REQUEST['wpgc_guestlist_wedding_planner_email_address'])) {
         update_option('wpgc_guestlist_wedding_planner_email_address',$_REQUEST['wpgc_guestlist_wedding_planner_email_address']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_hotel_reservation_name']) {
+    if (isset($_REQUEST['wpgc_guestlist_hotel_reservation_name'])) {
         update_option('wpgc_guestlist_hotel_reservation_name',$_REQUEST['wpgc_guestlist_hotel_reservation_name']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_wedding_planner_name']) {
+    if (isset($_REQUEST['wpgc_guestlist_wedding_planner_name'])) {
         update_option('wpgc_guestlist_wedding_planner_name',$_REQUEST['wpgc_guestlist_wedding_planner_name']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_toggle_hotel']) {
+    if (isset($_REQUEST['wpgc_guestlist_toggle_hotel'])) {
         update_option('wpgc_guestlist_toggle_hotel',$_REQUEST['wpgc_guestlist_toggle_hotel']);
         $ok = true;
     }
-    if ($_REQUEST['wpgc_guestlist_num_hotels']) {
+    if (isset($_REQUEST['wpgc_guestlist_num_hotels'])) {
         update_option('wpgc_guestlist_num_hotels', $_REQUEST['wpgc_guestlist_num_hotels']);
         $ok = true;    
     }
     // we assume that num_hotels is a number
     $num_hotels = get_option('wpgc_guestlist_num_hotels');
     for ($i = 0; $i < $num_hotels; $i+=1) {
-        if ($_REQUEST['wpgc_guestlist_hotel'.$i]) {
+        if (isset($_REQUEST['wpgc_guestlist_hotel'.$i])) {
             update_option('wpgc_guestlist_hotel'.$i, $_REQUEST['wpgc_guestlist_hotel'.$i]);
             $ok = true; // this is not very meaningful right now because $num_hotels will have already set ok to true.
         }
     }
     /* VERSION 2.0
-    if ($_REQUEST['wpgc_guestlist_toggle_ceremony']) {
+    if (isset($_REQUEST['wpgc_guestlist_toggle_ceremony'])) {
         update_option('wpgc_guestlist_toggle_ceremony',$_REQUEST['wpgc_guestlist_toggle_ceremony']);
         $ok = true;
     }
@@ -300,7 +302,7 @@ function print_wpgc_guestlist_form() {
     $default_redirect_uri = get_option('wpgc_guestlist_google_redirect_uri');
 
     if (isset($_GET['deauthorize'])) {
-      delete_option('google_api_access_token');
+      delete_option('gdrsvp_access_token');
     }
 
     $perm_access_token = "";
@@ -315,16 +317,16 @@ function print_wpgc_guestlist_form() {
 
         if (isset($_GET['code'])) {
           $client->authenticate($_GET['code']);
-          update_option('google_api_access_token',$client->getAccessToken());
-          unset($_GET['code']);
+          update_option('gdrsvp_access_token',$client->getAccessToken());
           // Redirecting to same page without authorization code in query string
           // Better done with HTTP header, but headers already sent by this point
+          unset($_GET['code']);
           $query_string = urldecode(http_build_query($_GET));
           $redirect = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'] . "?" . $query_string;
           echo "<script>window.location.replace('" . $redirect . "');</script>";
         }
 
-        $perm_access_token = get_option('google_api_access_token');
+        $perm_access_token = get_option('gdrsvp_access_token');
         if (isset($perm_access_token) && $perm_access_token) {
           $client->setAccessToken($perm_access_token);
         } else {
@@ -345,30 +347,30 @@ function print_wpgc_guestlist_form() {
     */
 
     ?>
-        <script type="text/Javascript">
-            var numHotels = <?=$default_num_hotels?>;
-            function generate_hotel_form() {            
-                document.getElementById('wpgc_guestlist_hotel_forms').innerHTML="We have hotels numbering " + numHotels;
-            }
-        </script>
-        
         <form method="post">
         <?php settings_fields(__FILE__); ?>
         <?php do_settings_sections(__FILE__); ?>
-            <div class="box">
-                <div class="request">
+
+        <h3>Google API Settings</h3>
+        <table class="form-table">
+            <tbody>
+                <tr>
+                    <th>Google API Authorization</th>
+                    <td>
     <?php
     if ($client && isset($authUrl)) {
         echo "<a class='login' href='" . $authUrl . "'>Authorize this plugin to Google</a>";
     } elseif ($client) {
-        echo "<span>You have authorized the plugin!</span>";
+        echo "<p>You have authorized the plugin!</p>";
         echo "<a class='logout' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize this plugin</a>";
     } else {
         echo "<span>Fill in the values above to set up access to your Google spreadsheet</span>";
     }
     ?>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
             
             
     <?php /* VERSION 3.0
@@ -426,7 +428,7 @@ function wpgc_prepare_access_token($client_id, $client_secret, $access_token) {
     if ($client->isAccessTokenExpired()) {
         $refresh_token = $client->getRefreshToken();
         $client->refreshToken($refresh_token);
-        update_option('google_api_access_token', $client->getAccessToken());
+        update_option('gdrsvp_access_token', $client->getAccessToken());
     }
 }
 
@@ -489,7 +491,7 @@ function wpgc_my_googledocsguestlist ($text) {
     // Key variables
     $client_id = get_option('wpgc_guestlist_google_client_id');
     $client_secret = get_option('wpgc_guestlist_google_client_secret');
-    $access_token = get_option('google_api_access_token');
+    $access_token = get_option('gdrsvp_access_token');
 
     $spreadsheet_name = get_option('wpgc_guestlist_google_spreadsheet_name');
     $worksheet_name = get_option('wpgc_guestlist_google_worksheet_name');
