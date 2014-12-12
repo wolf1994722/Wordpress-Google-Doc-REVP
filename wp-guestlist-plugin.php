@@ -3,7 +3,7 @@
 Plugin Name: Google Docs Guestlist
 Version: 1.2
 Plugin URI: http://www.weedeedee.com/wordpress/google-docs-rsvp-guestlist-plugin-for-wordpress/
-Description: A wedding guestlist that uses Google Docs for its backend. Instructions: Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. Go to "Settings->Google Docs RSVP" to configure. Add the text: wpgc-googledocsguestlist in the content of your RSVP page.
+Description: A wedding guestlist that uses Google Docs for its backend. Instructions: Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. Go to "Settings->Google Docs RSVP" to configure. Add the text: gdrsvp_googledocsrsvp in the content of your RSVP page.
 Author: Gifford Cheung, Brian Watanabe
 
     Copyright (C) 2008 Gifford Cheung, Brian Watanabe
@@ -38,54 +38,54 @@ use Google\Spreadsheet\ServiceRequestFactory;
 ini_set('display_errors', 'On');
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-function register_settings_fields() {
+function gdrsvp_register_settings_fields() {
     add_settings_section(
         'gdrsvp_google_section',
         'Google Settings',
-        'show_google_section',
+        'gdrsvp_show_google_section',
         __FILE__
     );
 
     add_settings_field(
-        'wpgc_guestlist_google_client_id',
+        'gdrsvp_google_client_id',
         'Google Client ID',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_google_section',
         array(
-            'field_name' => 'wpgc_guestlist_google_client_id',
+            'field_name' => 'gdrsvp_google_client_id',
             'description' => 'Your Google project client ID (e.g. 123456789012-j28e0e5rpbk4lh91avgaa55jobep90ec.apps.googleusercontent.com)'
         )
     );
-    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_client_id');
+    register_setting('gdrsvp_google_section', 'gdrsvp_google_client_id');
     add_settings_field(
-        'wpgc_guestlist_google_client_secret',
+        'gdrsvp_google_client_secret',
         'Google Client Secret',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_google_section',
         array(
-            'field_name' => 'wpgc_guestlist_google_client_secret',
+            'field_name' => 'gdrsvp_google_client_secret',
             'description' => 'Your Google project client secret (e.g. nSFlUIRGuWG36xBRp578FKaV)'
         )
     );
-    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_client_secret');
+    register_setting('gdrsvp_google_section', 'gdrsvp_google_client_secret');
     // If redirect URI is not set, set it to full URL of plugin page
     $schema = (@$_SERVER['HTTPS'] == "on") ? "https://" : "http://";
     $current_url = $schema.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
     add_settings_field(
-        'wpgc_guestlist_google_redirect_uri',
+        'gdrsvp_google_redirect_uri',
         'Google Redirect URI',
-        'show_settings_label_field',
+        'gdrsvp_show_settings_label_field',
         __FILE__,
         'gdrsvp_google_section',
         array(
-            'field_name' => 'wpgc_guestlist_google_redirect_uri',
+            'field_name' => 'gdrsvp_google_redirect_uri',
             'description' => 'Your Google project redirect URI (paste this into your project in the Google Developers Console)',
             'default_value' => $current_url
         )
     );
-    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_redirect_uri');
+    register_setting('gdrsvp_google_section', 'gdrsvp_google_redirect_uri');
 
     add_settings_section(
         'gdrsvp_other_section',
@@ -95,93 +95,93 @@ function register_settings_fields() {
     );
 
     add_settings_field(
-        'wpgc_guestlist_google_spreadsheet_name',
+        'gdrsvp_google_spreadsheet_name',
         'Google Spreadsheet Name',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_google_spreadsheet_name',
+            'field_name' => 'gdrsvp_google_spreadsheet_name',
             'description' => 'The name of your spreadsheet'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_google_spreadsheet_name');
+    register_setting('gdrsvp_other_section', 'gdrsvp_google_spreadsheet_name');
     add_settings_field(
-        'wpgc_guestlist_google_worksheet_name',
+        'gdrsvp_google_worksheet_name',
         'Google Worksheet Name',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_google_worksheet_name',
+            'field_name' => 'gdrsvp_google_worksheet_name',
             'description' => 'The name of your worksheet (e.g. Sheet1)'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_google_worksheet_name');
+    register_setting('gdrsvp_other_section', 'gdrsvp_google_worksheet_name');
     add_settings_field(
-        'wpgc_guestlist_wedding_planner_name',
+        'gdrsvp_wedding_planner_name',
         'Wedding Planner Name',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_wedding_planner_name',
+            'field_name' => 'gdrsvp_wedding_planner_name',
             'description' => 'The name of the person to contact directly for questions, confirmations, or problems... (e.g. Bernard and Alice)'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_wedding_planner_name');
+    register_setting('gdrsvp_other_section', 'gdrsvp_wedding_planner_name');
     add_settings_field(
-        'wpgc_guestlist_wedding_planner_email_address',
+        'gdrsvp_wedding_planner_email_address',
         'Wedding Planner Email Address',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_wedding_planner_email_address',
+            'field_name' => 'gdrsvp_wedding_planner_email_address',
             'description' => 'This account will be emailed every time there is a new RSVP (assuming your WordPress site is configured to send email)'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_wedding_planner_email_address');
+    register_setting('gdrsvp_other_section', 'gdrsvp_wedding_planner_email_address');
     add_settings_field(
-        'wpgc_guestlist_hotel_reservation_name',
+        'gdrsvp_hotel_reservation_name',
         'Hotel Reservation Name',
-        'show_settings_text_field',
+        'gdrsvp_show_settings_text_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_hotel_reservation_name',
+            'field_name' => 'gdrsvp_hotel_reservation_name',
             'description' => 'Name or party under which the hotels are reserved'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_hotel_reservation_name');
+    register_setting('gdrsvp_other_section', 'gdrsvp_hotel_reservation_name');
     add_settings_field(
-        'wpgc_guestlist_toggle_hotel',
+        'gdrsvp_toggle_hotel',
         'Ask Guests for Hotel Information',
-        'show_settings_radio_field',
+        'gdrsvp_show_settings_radio_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_toggle_hotel'
+            'field_name' => 'gdrsvp_toggle_hotel'
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_toggle_hotel');
+    register_setting('gdrsvp_other_section', 'gdrsvp_toggle_hotel');
     add_settings_field(
-        'wpgc_guestlist_num_hotels',
+        'gdrsvp_num_hotels',
         'Number of Hotels',
-        'show_settings_hotels_field',
+        'gdrsvp_show_settings_hotels_field',
         __FILE__,
         'gdrsvp_other_section',
         array(
-            'field_name' => 'wpgc_guestlist_num_hotels',
-            'sub_div_name' => 'wpgc_guestlist_hotel_forms',
-            'sub_field_name' => 'wpgc_guestlist_hotel',
+            'field_name' => 'gdrsvp_num_hotels',
+            'sub_div_name' => 'gdrsvp_hotel_forms',
+            'sub_field_name' => 'gdrsvp_hotel',
             'default_value' => 2
         )
     );
-    register_setting('gdrsvp_other_section', 'wpgc_guestlist_num_hotels');
+    register_setting('gdrsvp_other_section', 'gdrsvp_num_hotels');
 }
 
-function show_google_section() {
+function gdrsvp_show_google_section() {
     $schema = (@$_SERVER['HTTPS'] == "on") ? "https://" : "http://";
     $current_host = $schema.$_SERVER['HTTP_HOST']; 
     $current_url = $schema.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
@@ -205,7 +205,7 @@ function show_google_section() {
     echo '<p>When you have finished successfully, this page will indicate the authorization was successful.</p>';
 }
 
-function show_settings_text_field($args) {
+function gdrsvp_show_settings_text_field($args) {
     $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" class="regular-text" />';
     if (!empty($args['description'])) {
@@ -213,7 +213,7 @@ function show_settings_text_field($args) {
     } 
 }
 
-function show_settings_label_field($args) {
+function gdrsvp_show_settings_label_field($args) {
     $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<code>' . $saved_value . '</code>';
     echo '<input type="hidden" name="' . $args['field_name'] . '" value="'.$saved_value.'" />';
@@ -222,7 +222,7 @@ function show_settings_label_field($args) {
     } 
 }
 
-function show_settings_radio_field($args) {
+function gdrsvp_show_settings_radio_field($args) {
     $saved_value = get_option( $args['field_name'], $args['default_value'] );
     if (strcmp($saved_value,"true") == 0) {
         $true_on = 'checked="checked"';
@@ -233,7 +233,7 @@ function show_settings_radio_field($args) {
     echo '<input type="radio" name="' . $args['field_name'] . '" value="false" ' . $false_on . ' />Off';
 }
 
-function show_settings_hotels_field($args) {
+function gdrsvp_show_settings_hotels_field($args) {
     $saved_value = get_option( $args['field_name'], $args['default_value'] );
     echo '<input type="text" name="' . $args['field_name'] . '" value="'.$saved_value.'" /> ';
     echo '<input type="submit" name="submit" class="button button-primary" value="Update" /><br />';
@@ -255,69 +255,69 @@ function gdrsvp_load_resources() {
     wp_enqueue_style('gdrsvp.css');
 }
 
-function admin_wpgc_guestlist_options() {
+function gdrsvp_admin_options() {
     echo '<div class="wrap"><h2>Google Docs RSVP</h2>';
     if ($_REQUEST['submit']) {
-        update_wpgc_guestlist_options();
+        gdrsvp_update_admin_options();
     }
-    print_wpgc_guestlist_form();
+    gdrsvp_print_admin_form();
     echo '</div>';
 }
 
-function update_wpgc_guestlist_options() {
+function gdrsvp_update_admin_options() {
     $ok = false;
 
-    if (isset($_REQUEST['wpgc_guestlist_google_client_id'])) {
-        update_option('wpgc_guestlist_google_client_id',$_REQUEST['wpgc_guestlist_google_client_id']);
+    if (isset($_REQUEST['gdrsvp_google_client_id'])) {
+        update_option('gdrsvp_google_client_id',$_REQUEST['gdrsvp_google_client_id']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_google_client_secret'])) {
-        update_option('wpgc_guestlist_google_client_secret',$_REQUEST['wpgc_guestlist_google_client_secret']);
+    if (isset($_REQUEST['gdrsvp_google_client_secret'])) {
+        update_option('gdrsvp_google_client_secret',$_REQUEST['gdrsvp_google_client_secret']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_google_redirect_uri'])) {
-        update_option('wpgc_guestlist_google_redirect_uri',$_REQUEST['wpgc_guestlist_google_redirect_uri']);
+    if (isset($_REQUEST['gdrsvp_google_redirect_uri'])) {
+        update_option('gdrsvp_google_redirect_uri',$_REQUEST['gdrsvp_google_redirect_uri']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_google_spreadsheet_name'])) {
-        update_option('wpgc_guestlist_google_spreadsheet_name',$_REQUEST['wpgc_guestlist_google_spreadsheet_name']);
+    if (isset($_REQUEST['gdrsvp_google_spreadsheet_name'])) {
+        update_option('gdrsvp_google_spreadsheet_name',$_REQUEST['gdrsvp_google_spreadsheet_name']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_google_worksheet_name'])) {
-        update_option('wpgc_guestlist_google_worksheet_name',$_REQUEST['wpgc_guestlist_google_worksheet_name']);
+    if (isset($_REQUEST['gdrsvp_google_worksheet_name'])) {
+        update_option('gdrsvp_google_worksheet_name',$_REQUEST['gdrsvp_google_worksheet_name']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_wedding_planner_email_address'])) {
-        update_option('wpgc_guestlist_wedding_planner_email_address',$_REQUEST['wpgc_guestlist_wedding_planner_email_address']);
+    if (isset($_REQUEST['gdrsvp_wedding_planner_email_address'])) {
+        update_option('gdrsvp_wedding_planner_email_address',$_REQUEST['gdrsvp_wedding_planner_email_address']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_hotel_reservation_name'])) {
-        update_option('wpgc_guestlist_hotel_reservation_name',$_REQUEST['wpgc_guestlist_hotel_reservation_name']);
+    if (isset($_REQUEST['gdrsvp_hotel_reservation_name'])) {
+        update_option('gdrsvp_hotel_reservation_name',$_REQUEST['gdrsvp_hotel_reservation_name']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_wedding_planner_name'])) {
-        update_option('wpgc_guestlist_wedding_planner_name',$_REQUEST['wpgc_guestlist_wedding_planner_name']);
+    if (isset($_REQUEST['gdrsvp_wedding_planner_name'])) {
+        update_option('gdrsvp_wedding_planner_name',$_REQUEST['gdrsvp_wedding_planner_name']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_toggle_hotel'])) {
-        update_option('wpgc_guestlist_toggle_hotel',$_REQUEST['wpgc_guestlist_toggle_hotel']);
+    if (isset($_REQUEST['gdrsvp_toggle_hotel'])) {
+        update_option('gdrsvp_toggle_hotel',$_REQUEST['gdrsvp_toggle_hotel']);
         $ok = true;
     }
-    if (isset($_REQUEST['wpgc_guestlist_num_hotels'])) {
-        update_option('wpgc_guestlist_num_hotels', $_REQUEST['wpgc_guestlist_num_hotels']);
+    if (isset($_REQUEST['gdrsvp_num_hotels'])) {
+        update_option('gdrsvp_num_hotels', $_REQUEST['gdrsvp_num_hotels']);
         $ok = true;    
     }
     // we assume that num_hotels is a number
-    $num_hotels = get_option('wpgc_guestlist_num_hotels');
+    $num_hotels = get_option('gdrsvp_num_hotels');
     for ($i = 0; $i < $num_hotels; $i+=1) {
-        if (isset($_REQUEST['wpgc_guestlist_hotel'.$i])) {
-            update_option('wpgc_guestlist_hotel'.$i, $_REQUEST['wpgc_guestlist_hotel'.$i]);
+        if (isset($_REQUEST['gdrsvp_hotel'.$i])) {
+            update_option('gdrsvp_hotel'.$i, $_REQUEST['gdrsvp_hotel'.$i]);
             $ok = true; // this is not very meaningful right now because $num_hotels will have already set ok to true.
         }
     }
     /* VERSION 2.0
-    if (isset($_REQUEST['wpgc_guestlist_toggle_ceremony'])) {
-        update_option('wpgc_guestlist_toggle_ceremony',$_REQUEST['wpgc_guestlist_toggle_ceremony']);
+    if (isset($_REQUEST['gdrsvp_toggle_ceremony'])) {
+        update_option('gdrsvp_toggle_ceremony',$_REQUEST['gdrsvp_toggle_ceremony']);
         $ok = true;
     }
     */
@@ -333,10 +333,10 @@ function update_wpgc_guestlist_options() {
     }
 }
 
-function print_wpgc_guestlist_form() {
-    $default_client_id = get_option('wpgc_guestlist_google_client_id');
-    $default_client_secret = get_option('wpgc_guestlist_google_client_secret');
-    $default_redirect_uri = get_option('wpgc_guestlist_google_redirect_uri');
+function gdrsvp_print_admin_form() {
+    $default_client_id = get_option('gdrsvp_google_client_id');
+    $default_client_secret = get_option('gdrsvp_google_client_secret');
+    $default_redirect_uri = get_option('gdrsvp_google_redirect_uri');
 
     if (isset($_GET['deauthorize'])) {
       delete_option('gdrsvp_access_token');
@@ -372,7 +372,7 @@ function print_wpgc_guestlist_form() {
     }
     
     /* VERSION 2.0
-    $default_toggle_ceremony = get_option('wpgc_guestlist_toggle_ceremony');
+    $default_toggle_ceremony = get_option('gdrsvp_toggle_ceremony');
     $ceremonyon = "";
     $ceremonyoff = "";
     if ($default_toggle_ceremony) {
@@ -416,9 +416,9 @@ function print_wpgc_guestlist_form() {
     
     <?php
     /* VERSION 2.0
-    <label for="wpgc_guestlist_toggle_ceremony">Ceremony:<br />
-    <input type="radio" name="wpgc_guestlist_toggle_ceremony" value="true" <?=$ceremonyon?> />On
-    <input type="radio" name="wpgc_guestlist_toggle_ceremony" value="false" <?=$ceremonyoff?> />Off
+    <label for="gdrsvp_toggle_ceremony">Ceremony:<br />
+    <input type="radio" name="gdrsvp_toggle_ceremony" value="true" <?=$ceremonyon?> />On
+    <input type="radio" name="gdrsvp_toggle_ceremony" value="false" <?=$ceremonyoff?> />Off
     */
     ?>
 
@@ -427,21 +427,21 @@ function print_wpgc_guestlist_form() {
     <?php
 }
 
-function modify_menu() {
+function gdrsvp_modify_menu() {
     add_options_page(
         'Google Docs RSVP',        //page title
         'Google Docs RSVP',        //subpage title
         'manage_options',              //access
         __FILE__,                      //current file
-        'admin_wpgc_guestlist_options' //options function above
+        'gdrsvp_admin_options' //options function above
     );
 }
 
 /*
-Function: wpgc_clean
+Function: gdrsvp_clean
 Meant to clean up user input.... watching out for google docs injection attacks???? shrug
 */
-function wpgc_clean( $value , $strip = true) {
+function gdrsvp_clean( $value , $strip = true) {
     return $value;
     /*
     if ($strip) {
@@ -453,10 +453,10 @@ function wpgc_clean( $value , $strip = true) {
 }
 
 /*
-Function: wpgc_prepare_access_token
+Function: gdrsvp_prepare_access_token
 Helper function to ensure the access token is valid for the listFeed function
 */
-function wpgc_prepare_access_token($client_id, $client_secret, $access_token) {
+function gdrsvp_prepare_access_token($client_id, $client_secret, $access_token) {
     $client = new Google_Client();
     $client->setClientId($client_id);
     $client->setClientSecret($client_secret);
@@ -470,11 +470,11 @@ function wpgc_prepare_access_token($client_id, $client_secret, $access_token) {
 
 
 /*
-Function: wpgc_get_listFeed_for_guestcode
+Function: gdrsvp_get_listFeed_for_guestcode
 This is a helper function. It connects to the Google docs spreadsheet, finds the right worksheet, and finds only the rows that have $guest_code as its guest code.
 TODO: Order the entries by some order
 */
-function wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code) {
+function gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code) {
     $accessTokenObj = json_decode($access_token, true);
     $serviceRequest = new DefaultServiceRequest($accessTokenObj['access_token']);
     ServiceRequestFactory::setInstance($serviceRequest);
@@ -498,28 +498,28 @@ function add_guest_code_submission($outputtext) {
     return $new_outputtext;
 }
 
-function wpgc_my_googledocsguestlist ($text) {
+function gdrsvp_my_googledocsrsvp ($text) {
     //QUIT if the replacement string doesn't exist
-    if (!strstr($text,'wpgc-googledocsguestlist')) {
+    if (!strstr($text,'gdrsvp-googledocsrsvp')) {
         return $text;
     }
     // Key variables
-    $client_id = get_option('wpgc_guestlist_google_client_id');
-    $client_secret = get_option('wpgc_guestlist_google_client_secret');
+    $client_id = get_option('gdrsvp_google_client_id');
+    $client_secret = get_option('gdrsvp_google_client_secret');
     $access_token = get_option('gdrsvp_access_token');
 
-    $spreadsheet_name = get_option('wpgc_guestlist_google_spreadsheet_name');
-    $worksheet_name = get_option('wpgc_guestlist_google_worksheet_name');
-    $wedding_planner = get_option('wpgc_guestlist_wedding_planner_name');
-    $wedding_planner_email_address = get_option('wpgc_guestlist_wedding_planner_email_address');
-    $hotel_reservation_name = get_option('wpgc_guestlist_hotel_reservation_name');
+    $spreadsheet_name = get_option('gdrsvp_google_spreadsheet_name');
+    $worksheet_name = get_option('gdrsvp_google_worksheet_name');
+    $wedding_planner = get_option('gdrsvp_wedding_planner_name');
+    $wedding_planner_email_address = get_option('gdrsvp_wedding_planner_email_address');
+    $hotel_reservation_name = get_option('gdrsvp_hotel_reservation_name');
 
-    $toggle_hotel = get_option('wpgc_guestlist_toggle_hotel');
+    $toggle_hotel = get_option('gdrsvp_toggle_hotel');
     $hotelon = !(boolean)strcmp($toggle_hotel,"true");
-    $num_hotels = get_option('wpgc_guestlist_num_hotels');
+    $num_hotels = get_option('gdrsvp_num_hotels');
     $hotel_list = array();
     for ($i = 0; $i < $num_hotels; $i+=1) {
-        $hotel_list[$i] = get_option('wpgc_guestlist_hotel'.$i);
+        $hotel_list[$i] = get_option('gdrsvp_hotel'.$i);
     }
 
     //Configuration check
@@ -542,8 +542,8 @@ function wpgc_my_googledocsguestlist ($text) {
                 // (A) Save to the database
                 try {
                     // Prepare access token and retrieve the listFeed for your guestcode
-                    wpgc_prepare_access_token($client_id, $client_secret, $access_token);
-                    $listFeed = wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
+                    gdrsvp_prepare_access_token($client_id, $client_secret, $access_token);
+                    $listFeed = gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
                     
                     // CHECK, did they already fill out the form?
                     $entries = $listFeed->getEntries();
@@ -560,11 +560,11 @@ function wpgc_my_googledocsguestlist ($text) {
                     
                     $hotel = '';
                     if (isset($_POST['hotel'])) {
-                        $hotel = wpgc_clean($_POST['hotel']);
+                        $hotel = gdrsvp_clean($_POST['hotel']);
                     }
                     $messagefromguest = '';
                     if (isset($_POST['messagefromguest'])) {
-                        $messagefromguest = wpgc_clean($_POST['messagefromguest']);
+                        $messagefromguest = gdrsvp_clean($_POST['messagefromguest']);
                     }
                     $ceremony_attendees = array();            
                     $banquet_attendees = array();
@@ -629,8 +629,7 @@ function wpgc_my_googledocsguestlist ($text) {
 
                     // (B) Give user confirmation
                     $emailreport = "NEW RSVP! \n";
-                    $outputtext .= '<h6>Thank you for your response!</h6><br/>';
-                    $outputtext .= "<br/>\n";
+                    $outputtext .= "<h6>Thank you for your response!</h6>\n";
                     $plural = '';
                     if (sizeof($ceremony_attendees) != 1) {
                         $plural = "s";
@@ -718,7 +717,7 @@ function wpgc_my_googledocsguestlist ($text) {
                     mail($wedding_planner_email_address, $subject, $emailreport, $headers);
 
                 } catch (Exception $e) {
-                    $outputtext .= "<h6>Oops, there was a small glitch.</h6><p>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</p>";
+                    $outputtext .= "<h6>Oops, there was a small glitch.</h6><p><em>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</em></p>";
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
                     $outputtext = add_guest_code_submission($outputtext);
                 }
@@ -732,8 +731,8 @@ function wpgc_my_googledocsguestlist ($text) {
                         break;
                     }
                     // Prepare access token and retrieve the listFeed for your guestcode
-                    wpgc_prepare_access_token($client_id, $client_secret, $access_token);
-                    $listFeed = wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
+                    gdrsvp_prepare_access_token($client_id, $client_secret, $access_token);
+                    $listFeed = gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
 
                     $already_replied = false;
                     // CHECK, did they already fill out the form?
@@ -840,7 +839,7 @@ function wpgc_my_googledocsguestlist ($text) {
                     }
 
                 } catch (Exception $e) {
-                    $outputtext .= "<h6>Oops. You found an error.</h6><p>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</p>";
+                    $outputtext .= "<h6>Oops. You found an error.</h6><p><em>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</em></p>";
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
                     $outputtext = add_guest_code_submission($outputtext);
                 }
@@ -859,13 +858,13 @@ function wpgc_my_googledocsguestlist ($text) {
         $outputtext = add_guest_code_submission($outputtext);
     }
     
-    $text = str_replace('wpgc-googledocsguestlist', $outputtext, $text);
+    $text = str_replace('gdrsvp-googledocsrsvp', $outputtext, $text);
     return $text;
 }
 
-add_action('admin_init', 'register_settings_fields');
+add_action('admin_init', 'gdrsvp_register_settings_fields');
 add_action('admin_enqueue_scripts', 'gdrsvp_load_resources');
-add_action('admin_menu', 'modify_menu');
+add_action('admin_menu', 'gdrsvp_modify_menu');
 add_action('wp_enqueue_scripts', 'gdrsvp_load_resources');
-add_filter('the_content', 'wpgc_my_googledocsguestlist');
+add_filter('the_content', 'gdrsvp_my_googledocsrsvp');
 ?>
