@@ -250,6 +250,11 @@ function show_settings_hotels_field($args) {
     } 
 }
 
+function gdrsvp_load_resources() {
+    wp_register_style('gdrsvp.css', plugin_dir_url(__FILE__).'/gdrsvp.css');
+    wp_enqueue_style('gdrsvp.css');
+}
+
 function admin_wpgc_guestlist_options() {
     echo '<div class="wrap"><h2>Google Docs RSVP</h2>';
     if ($_REQUEST['submit']) {
@@ -387,10 +392,10 @@ function print_wpgc_guestlist_form() {
                         <td>
     <?php
     if ($client && isset($authUrl)) {
-        echo "<a class='login' href='" . $authUrl . "' style='color:red'>Authorize this plugin to Google</a> (Last step!)";
+        echo "<a class='authorize' href='" . $authUrl . "'>Authorize this plugin to Google</a> (Last step!)";
     } elseif ($client) {
-        echo "<p style='color:green'>You have authorized the plugin!</p>";
-        echo "<a class='logout' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize the plugin</a>";
+        echo "<p class='authorized'>You have authorized the plugin!</p>";
+        echo "<a class='deauthorize' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize the plugin</a>";
     } else {
         echo "<p>Fill in the values below to set up access to your Google spreadsheet.</p>";
     }
@@ -485,7 +490,7 @@ function wpgc_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $work
 function add_guest_code_submission($outputtext) {
     $new_outputtext = $outputtext;
     $new_outputtext .= "<p>Please type in the code from your wedding invitation below:</p>";
-    $new_outputtext .= "<form style='text-align: left' action='".get_permalink()."' method='post'>";
+    $new_outputtext .= "<form action='".get_permalink()."' method='post'>";
     $new_outputtext .= "<input type='hidden' name='motion' value='edit'/>";
     $new_outputtext .= "<input type='text' name='guest_code' /> ";
     $new_outputtext .= "<button type='Submit'>Submit</button>";
@@ -624,7 +629,7 @@ function wpgc_my_googledocsguestlist ($text) {
 
                     // (B) Give user confirmation
                     $emailreport = "NEW RSVP! \n";
-                    $outputtext .= '<strong>Thank you for your response!</strong><br/>';
+                    $outputtext .= '<h6>Thank you for your response!</h6><br/>';
                     $outputtext .= "<br/>\n";
                     $plural = '';
                     if (sizeof($ceremony_attendees) != 1) {
@@ -706,15 +711,16 @@ function wpgc_my_googledocsguestlist ($text) {
                         $emailreport .= "\n";
                     }
 
-                    $outputtext .= "<em>Thank you! Your response has been saved and your invitation code has been used. If you need to change your reply or have any questions, please contact " . $wedding_planner . " at <a href='". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a>.</em>";
+                    $outputtext .= "<em>Thank you! Your response has been saved and your invitation code has been used. If you need to change your reply or have any questions, please contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a>.</em>";
 
-                    $subject = "Wedding RSVP";
+                    $subject = "[gdrsvp] New Wedding RSVP!";
                     $headers = 'From: '.$wedding_planner_email_address;
                     mail($wedding_planner_email_address, $subject, $emailreport, $headers);
 
                 } catch (Exception $e) {
-                    $outputtext .= "<strong>Oops, there was a small glitch.</strong> Please try again, or contact ". $wedding_planner ." directly.";
+                    $outputtext .= "<h6>Oops, there was a small glitch.</h6><p>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</p>";
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
+                    $outputtext = add_guest_code_submission($outputtext);
                 }
             break;    
             
@@ -747,64 +753,77 @@ function wpgc_my_googledocsguestlist ($text) {
                         if (count($entries) != 1) {
                             $plural = "s";
                         }
-                        $outputtext .= "Thank you for replying online. We look forward to celebrating with you all! Please indicate whether each member of your party will be attending our wedding day events.<br/><br/><strong>We have reserved ".count($entries)." seat".$plural." in your honor.</strong><br/>";
+                        $outputtext .= "<p>Thank you for replying online. We look forward to celebrating with you all! Please indicate whether each member of your party will be attending our wedding day events.</p><p><strong>We have reserved ".count($entries)." seat".$plural." in your honor.</strong></p>";
                         // Initializing the form. And yes, it is one massive form for the whole page. We differentiate among the attendees by adding an index number after each input 'name', e.g. guestname3
-                        $outputtext .= '<form style="text-align: left" action="'.get_permalink().'" method="post">';
+                        $outputtext .= '<form action="'.get_permalink().'" method="post">';
 
                         // We use a for loop here because the index i is important to keep as a row identifier when we update the row information later.
+                        $outputtext .= '<table class="rsvp-table"><tbody>';
                         for ($i = 0; $i < count($entries); $i +=1) {
                             $entry = $entries[$i]->getValues();
 
                             // Populating the sub-parts of the form for each guest
-                            $outputtext .= '<strong>'.($i+1).'. Name:</strong> <input name="guestname'.$i.'" type="text" value="'. htmlspecialchars($entry["guestname"],ENT_QUOTES).'"/>';
-                            $outputtext .= "<br/>";
-                            $outputtext .= '<em>Ceremony:</em> <input name="ceremony'.$i.'" type="radio" value="Attending" ';
+                            $outputtext .= '<tr>';
+                            $outputtext .= '<th>'.($i+1).'. Name</th>';
+                            $outputtext .= '<td><input name="guestname'.$i.'" type="text" value="'. htmlspecialchars($entry["guestname"],ENT_QUOTES).'"/></td>';
+                            $outputtext .= '</tr>';
+
+                            $outputtext .= '<tr>';
+                            $outputtext .= '<th>Ceremony</th>';
+                            $outputtext .= '<td><input name="ceremony'.$i.'" type="radio" value="Attending" ';
                             if (strcmp($entry["ceremony"],"Attending") == 0) {
                                 $outputtext .= "checked='checked' ";
                             }
-                            $outputtext .= "/> Attending   ";
+                            $outputtext .= "/> Attending";
+                            $outputtext .= "<br/>";
                             $outputtext .= '<input name="ceremony'.$i.'" type="radio" value="Not Attending" ';
                             if (strcmp($entry["ceremony"],"Not Attending") == 0) {
                                 $outputtext .= 'checked="checked" ';
                             }
-                            $outputtext .= "/> Not Attending";
-                            $outputtext .= "<br/>";
-                            $outputtext .= '<em>Banquet:</em> <input name="banquet'.$i.'" type="radio" value="Attending" ';
+                            $outputtext .= "/> Not Attending</td>";
+                            $outputtext .= '</tr>';
+
+                            $outputtext .= '<tr>';
+                            $outputtext .= '<th>Banquet</th>';
+                            $outputtext .= '<td><input name="banquet'.$i.'" type="radio" value="Attending" ';
                             if (strcmp($entry["banquet"],"Attending") == 0) {
                                 $outputtext .= "checked='checked' ";
                             }
-                            $outputtext .= "/> Attending   ";
+                            $outputtext .= "/> Attending";
+                            $outputtext .= "<br/>";
                             $outputtext .= '<input name="banquet'.$i.'" type="radio" value="Not Attending" ';
                             if (strcmp($entry["banquet"],"Not Attending") == 0) {
                                 $outputtext .= "checked='checked' ";
                             }
-                            $outputtext .= "/> Not Attending";
-                            $outputtext .= "<br/>\n";
+                            $outputtext .= "/> Not Attending</td>";
+                            $outputtext .= '</tr>';
+
+                            $outputtext .= '<tr><td colspan="2">';
                             // Message for guest
                             if (!empty($entry["custommessageforguest"])) {
                                 $outputtext .= '<blockquote>'.htmlspecialchars($entry["custommessageforguest"],ENT_QUOTES).'</blockquote>';
                             }
                             $outputtext .= '<input type="hidden" name="custommessageforguest'.$i.'" value="'.htmlspecialchars($entry["custommessageforguest"]).'"/>';
-
-                            $outputtext .= "<p/>\n";                
+                            $outputtext .= "</td></tr>\n";                
                         }
+                        $outputtext .= '</tbody></table>';
+
                         // Some questions for the whole party -- needs some tweaking
                         // Blocked Rooms, this doesn't record past information.
                         if ($hotelon) {
-                            $outputtext .= "<em>If you are planning to stay at one of the hotels where we have reserved rooms under \"" . $hotel_reservation_name . ",\" please let us know where you will be staying:</em>";
-                            $outputtext .= "<br/>\n";
+                            $outputtext .= "<p><strong>If you are planning to stay at one of the hotels where we have reserved rooms under \"" . $hotel_reservation_name . ",\" please let us know where you will be staying:</strong><br/>";
                             for ($i=0; $i < $num_hotels; $i++) {
                                 $outputtext .= "<input name='hotel' type='radio' value='hotel".$i."'/> ".$hotel_list[$i];
                                 $outputtext .= "<br/>\n";
                             }
                             $outputtext .= "<input name='hotel' type='radio' value='none'/> Not planning to stay at any of these hotels";
-                            $outputtext .= "<p/>\n";
+                            $outputtext .= "</p>\n";
                         }
 
                         // Message from the Guests
-                        $outputtext .= "<strong>Let us know how you're doing. Leave us a note!</strong><br/>\n";
+                        $outputtext .= "<p><strong>Let us know how you're doing. Leave us a note!</strong><br/>\n";
                         $outputtext .= "<textarea name='messagefromguest'></textarea>"; // Note that old comments are not retrieved. We assume that you will only submit an RSVP once.
-                        $outputtext .= "<br/>\n";
+                        $outputtext .= "</p>\n";
 
                         // Closing the form
                         $outputtext .= "\n";
@@ -822,7 +841,6 @@ function wpgc_my_googledocsguestlist ($text) {
 
                 } catch (Exception $e) {
                     $outputtext .= "<h6>Oops. You found an error.</h6><p>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</p>";
-                    //$outputtext .= "[There was a error. Please consult the source code or an experienced programmer. :( ]";
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
                     $outputtext = add_guest_code_submission($outputtext);
                 }
@@ -846,6 +864,8 @@ function wpgc_my_googledocsguestlist ($text) {
 }
 
 add_action('admin_init', 'register_settings_fields');
+add_action('admin_enqueue_scripts', 'gdrsvp_load_resources');
 add_action('admin_menu', 'modify_menu');
+add_action('wp_enqueue_scripts', 'gdrsvp_load_resources');
 add_filter('the_content', 'wpgc_my_googledocsguestlist');
 ?>

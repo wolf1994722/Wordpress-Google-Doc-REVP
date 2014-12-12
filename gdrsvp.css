@@ -1,0 +1,15 @@
+.authorized {
+    color: green;
+}
+
+.authorize {
+    color: red;
+}
+
+.rsvp-table, .rsvp-table th, .rsvp-table td {
+    border: 0;
+}
+
+.rsvp-table th {
+    text-align: right;
+}
