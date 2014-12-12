@@ -1,12 +1,12 @@
 <?php 
 /*
-Plugin Name: Google Docs Guestlist
-Version: 1.2
+Plugin Name: Google Docs RSVP
+Version: 2.0
 Plugin URI: http://www.weedeedee.com/wordpress/google-docs-rsvp-guestlist-plugin-for-wordpress/
 Description: A wedding guestlist that uses Google Docs for its backend. Instructions: Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. Go to "Settings->Google Docs RSVP" to configure. Add the text: gdrsvp_googledocsrsvp in the content of your RSVP page.
-Author: Gifford Cheung, Brian Watanabe
+Author: Gifford Cheung, Brian Watanabe, Chongsun Ahn
 
-    Copyright (C) 2008 Gifford Cheung, Brian Watanabe
+    Copyright (C) 2008-2014 Gifford Cheung, Brian Watanabe, Chongsun Ahn
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
