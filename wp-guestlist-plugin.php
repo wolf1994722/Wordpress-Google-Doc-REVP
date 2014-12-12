@@ -3,7 +3,7 @@
 Plugin Name: Google Docs Guestlist
 Version: 1.2
 Plugin URI: http://www.weedeedee.com/wordpress/google-docs-rsvp-guestlist-plugin-for-wordpress/
-Description: A wedding guestlist that uses Google Docs for its backend. Instructions: Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. Go to "Settings->Google Docs Guestlist" to configure. Add the text: wpgc-googledocsguestlist in the content of your RSVP page.
+Description: A wedding guestlist that uses Google Docs for its backend. Instructions: Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. Go to "Settings->Google Docs RSVP" to configure. Add the text: wpgc-googledocsguestlist in the content of your RSVP page.
 Author: Gifford Cheung, Brian Watanabe
 
     Copyright (C) 2008 Gifford Cheung, Brian Watanabe
@@ -40,9 +40,9 @@ error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 function register_settings_fields() {
     add_settings_section(
-        'gdrsvp_main_section',
-        'Main Settings',
-        false,
+        'gdrsvp_google_section',
+        'Google Settings',
+        'show_google_section',
         __FILE__
     );
 
@@ -51,25 +51,25 @@ function register_settings_fields() {
         'Google Client ID',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_google_section',
         array(
             'field_name' => 'wpgc_guestlist_google_client_id',
-            'description' => 'Your Google project client ID'
+            'description' => 'Your Google project client ID (e.g. 123456789012-j28e0e5rpbk4lh91avgaa55jobep90ec.apps.googleusercontent.com)'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_client_id');
+    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_client_id');
     add_settings_field(
         'wpgc_guestlist_google_client_secret',
         'Google Client Secret',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_google_section',
         array(
             'field_name' => 'wpgc_guestlist_google_client_secret',
-            'description' => 'Your Google project client secret'
+            'description' => 'Your Google project client secret (e.g. nSFlUIRGuWG36xBRp578FKaV)'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_client_secret');
+    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_client_secret');
     // If redirect URI is not set, set it to full URL of plugin page
     $schema = (@$_SERVER['HTTPS'] == "on") ? "https://" : "http://";
     $current_url = $schema.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
@@ -78,91 +78,99 @@ function register_settings_fields() {
         'Google Redirect URI',
         'show_settings_label_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_google_section',
         array(
             'field_name' => 'wpgc_guestlist_google_redirect_uri',
-            'description' => 'Your Google project redirect URI (paste this into your Google Cloud Console)',
+            'description' => 'Your Google project redirect URI (paste this into your project in the Google Developers Console)',
             'default_value' => $current_url
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_redirect_uri');
+    register_setting('gdrsvp_google_section', 'wpgc_guestlist_google_redirect_uri');
+
+    add_settings_section(
+        'gdrsvp_other_section',
+        'Other Settings',
+        false,
+        __FILE__
+    );
+
     add_settings_field(
         'wpgc_guestlist_google_spreadsheet_name',
         'Google Spreadsheet Name',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_google_spreadsheet_name',
             'description' => 'The name of your spreadsheet'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_spreadsheet_name');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_google_spreadsheet_name');
     add_settings_field(
         'wpgc_guestlist_google_worksheet_name',
         'Google Worksheet Name',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_google_worksheet_name',
             'description' => 'The name of your worksheet (e.g. Sheet1)'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_google_worksheet_name');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_google_worksheet_name');
     add_settings_field(
         'wpgc_guestlist_wedding_planner_name',
         'Wedding Planner Name',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_wedding_planner_name',
-            'description' => 'Name of person to contact directly for questions, confirmations, or problems... (e.g. Bernard and Alice)'
+            'description' => 'The name of the person to contact directly for questions, confirmations, or problems... (e.g. Bernard and Alice)'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_wedding_planner_name');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_wedding_planner_name');
     add_settings_field(
         'wpgc_guestlist_wedding_planner_email_address',
         'Wedding Planner Email Address',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_wedding_planner_email_address',
             'description' => 'This account will be emailed every time there is a new RSVP (assuming your WordPress site is configured to send email)'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_wedding_planner_email_address');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_wedding_planner_email_address');
     add_settings_field(
         'wpgc_guestlist_hotel_reservation_name',
         'Hotel Reservation Name',
         'show_settings_text_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_hotel_reservation_name',
             'description' => 'Name or party under which the hotels are reserved'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_hotel_reservation_name');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_hotel_reservation_name');
     add_settings_field(
         'wpgc_guestlist_toggle_hotel',
         'Ask Guests for Hotel Information',
         'show_settings_radio_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_toggle_hotel'
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_toggle_hotel');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_toggle_hotel');
     add_settings_field(
         'wpgc_guestlist_num_hotels',
         'Number of Hotels',
         'show_settings_hotels_field',
         __FILE__,
-        'gdrsvp_main_section',
+        'gdrsvp_other_section',
         array(
             'field_name' => 'wpgc_guestlist_num_hotels',
             'sub_div_name' => 'wpgc_guestlist_hotel_forms',
@@ -170,7 +178,31 @@ function register_settings_fields() {
             'default_value' => 2
         )
     );
-    register_setting('gdrsvp_main_section', 'wpgc_guestlist_num_hotels');
+    register_setting('gdrsvp_other_section', 'wpgc_guestlist_num_hotels');
+}
+
+function show_google_section() {
+    $schema = (@$_SERVER['HTTPS'] == "on") ? "https://" : "http://";
+    $current_host = $schema.$_SERVER['HTTP_HOST']; 
+    $current_url = $schema.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+    echo '<h4>Instructions on how to configure Google settings</h4>';
+    echo '<ol>';
+    echo '<li>Go to <a href="https://console.developers.google.com/" target="_blank">https://console.developers.google.com/</a> to get to the Google Developers Console.</li>';
+    echo '<li>Select <strong>Create Project</strong>.</li>';
+    echo '<li>Enter a name for the project (and ID if you wish) and select <strong>Create</strong>.</li>';
+    echo '<li>Once Google finishes creating the project, go to your project and select <strong>APIs</strong> under <strong>APIs & auth</strong>.</li>';
+    echo '<li>In the list of APIs, turn <strong>ON</strong> the one called <strong>Drive API</strong>.</li>';
+    echo '<li>Then, select <strong>Credentials</strong> under <strong>APIs & auth</strong>.</li>';
+    echo '<li>Under OAuth, select <strong>Create new Client ID</strong>.</li>';
+    echo '<li>For <strong>application type</strong>, choose <strong>Web Application</strong>.</li>';
+    echo '<li>For <strong>authorized JavaScript origins</strong>, enter your website name <code>'.$current_host.'</code>.</li>';
+    echo '<li>For <strong>authorized redirect URIs</strong>, enter <code>'.$current_url.'</code>; this is the Google Redirect URI (which is also displayed below).</li>';
+    echo '<li>Select <strong>Create new Client ID</strong> to create.</li>';
+    echo '<li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> into the plugin settings page.</li>';
+    echo '<li><strong>Save</strong> your settings. When the plugin page refreshes, you should see a link to authorize this plugin to access your Google account.</li>';
+    echo '<li>Click on the link and go through the steps to authorize.</li>';
+    echo '</ol>';
+    echo '<p>When you have finished successfully, this page will indicate the authorization was successful.</p>';
 }
 
 function show_settings_text_field($args) {
@@ -348,29 +380,28 @@ function print_wpgc_guestlist_form() {
 
     ?>
         <form method="post">
+            <table class="form-table">
+                <tbody>
+                    <tr>
+                        <th>Google Authorization</th>
+                        <td>
+    <?php
+    if ($client && isset($authUrl)) {
+        echo "<a class='login' href='" . $authUrl . "' style='color:red'>Authorize this plugin to Google</a> (Last step!)";
+    } elseif ($client) {
+        echo "<p style='color:green'>You have authorized the plugin!</p>";
+        echo "<a class='logout' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize the plugin</a>";
+    } else {
+        echo "<p>Fill in the values below to set up access to your Google spreadsheet.</p>";
+    }
+    ?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         <?php settings_fields(__FILE__); ?>
         <?php do_settings_sections(__FILE__); ?>
 
-        <h3>Google API Settings</h3>
-        <table class="form-table">
-            <tbody>
-                <tr>
-                    <th>Google API Authorization</th>
-                    <td>
-    <?php
-    if ($client && isset($authUrl)) {
-        echo "<a class='login' href='" . $authUrl . "'>Authorize this plugin to Google</a>";
-    } elseif ($client) {
-        echo "<p>You have authorized the plugin!</p>";
-        echo "<a class='logout' href='".$_SERVER['REQUEST_URI']."&deauthorize'>Deauthorize this plugin</a>";
-    } else {
-        echo "<span>Fill in the values above to set up access to your Google spreadsheet</span>";
-    }
-    ?>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
             
             
     <?php /* VERSION 3.0
@@ -510,7 +541,7 @@ function wpgc_my_googledocsguestlist ($text) {
 
     //Configuration check
     if (!$client_id || !$client_secret || !$access_token || !$spreadsheet_name || !$worksheet_name || !$wedding_planner_email_address) {
-        return "This plugin has not been fully configured.  Please fill out all the entries under Settings->GoogleDocs Guestlist.";
+        return "This plugin has not been fully configured. Please complete all of the steps described under Settings->Google Docs RSVP.";
     }
 
     $spreadsheet_key = '';
