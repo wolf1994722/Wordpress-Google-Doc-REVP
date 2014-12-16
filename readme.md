@@ -1,20 +1,20 @@
-# Google Docs Guestlist, WordPress Plugin
-* Contributors: Gifford Cheung, Brian Watanabe
+# Google Docs RSVP, WordPress Plugin
+* Contributors: Gifford Cheung, Brian Watanabe, Chongsun Ahn
 * Tags: RSVP, guestlist, wedding, Google Docs, spreadsheet
 * Requires at least: 2.5
-* Tested up to: 3.0
-* Stable tag: 1.2
+* Tested up to: 4.0.1
+* Stable tag: 2.0
 
 This plugin allows you to add RSVP and guestlist functionality. Guests can leave custom messages for the planners. Uses Google Docs spreadsheets.
 
 # Known issue
-(2014) The current version no longer works since Google has changed its authentication protocol for Google Spreadsheets. This git repo has been created to allow me to begin to revise the code accordingly.
+Guest codes are not case sensitive.
 
 # Installation
 
 1. Create a google docs spreadsheet with the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel. 
-2. Go to "Settings->Google Docs Guestlist" to configure. 
-3. Add the text: wpgc-googledocsguestlist in the content of your RSVP page.
+2. Go to "Settings->Google Docs RSVP" to configure. 
+3. Add the text: gdrsvp-googledocsrsvp in the content of your RSVP page.
 
 # Description
 This plugin allows you to add RSVP and guestlist functionality to your Wordpress site. It tracks RSVPs for ceremony and banquet. Additionally, guests can leave custom messages for the planners. The guestlist is maintained with a Google Docs spreadsheet which is very easy to use.
@@ -35,8 +35,8 @@ Features Bulletlist:
    2. The spreadsheet must have the following 7 headers: Guest Name, Code, Custom Message for Guest, Ceremony, Banquet, Message from Guest, Hotel
    3. Fill in the guestlist with names, codes, and an optional custom message. Make sure the code is not guessable, for example: short numeric codes are probably a bad idea. A nosy guest might punch in random numbers and see guest information.
    4. Download, unzip, upload, and activate your plugin. 
-   5. In your Wordpress site, go to "Settings->Google Docs Guestlist" and fill in the account information and Google Docs title and sheet information.
-   6. Create a new wordpress Page and put the text: wpgc-googledocsguestlist in the content box. The plugin will replace it with the RSVP code.
+   5. In your Wordpress site, go to "Settings->Google Docs RSVP" and follow the step-by-step instructions on the page, and fill in the other information (Google Docs title and sheet, etc.).
+   6. Create a new wordpress Page and put the text: gdrsvp-googledocsrsvp in the content box. The plugin will replace it with the RSVP code.
    7. Now, guests can type in a code and fill out the reservation form, which will send an email to you and update the spreadsheet. Note: Once guests have filled out the form, their RSVP code is no longer usable.
 
 
@@ -59,10 +59,10 @@ Note that you are required to have PHP version 5. Sorry, the only solution right
 
 # How do I change some of the text?
 
-If you cannot change the text in the options page, you can change it in the source code (by editting wp-gustlist-plugin.php). This is not a very safe thing to do, but you could search the code for the words you want to change and fiddle around with it. This take familiarity with HTML and a little PHP. 
+If you cannot change the text in the options page, you can change it in the source code (by editting wp-gdrsvp-plugin.php). This is not a very safe thing to do, but you could search the code for the words you want to change and fiddle around with it. This take familiarity with HTML and a little PHP. 
 
 # License
-Copyright (C) 2008 Gifford Cheung, Brian Watanabe
+Copyright (C) 2008-2014 Gifford Cheung, Brian Watanabe, Chongsun Ahn
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
