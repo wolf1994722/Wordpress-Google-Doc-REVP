@@ -483,6 +483,7 @@ function gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $wo
     $spreadsheet = $spreadsheetFeed->getByTitle($spreadsheet_name);
     $worksheetFeed = $spreadsheet->getWorksheets();
     $worksheet = $worksheetFeed->getByTitle($worksheet_name);
+    if (is_null($worksheet)) return null;
     $listFeed = $worksheet->getListFeed(array("sq" => "code=".$guest_code));
     return $listFeed;
 }
@@ -544,7 +545,7 @@ function gdrsvp_my_googledocsrsvp ($text) {
                     // Prepare access token and retrieve the listFeed for your guestcode
                     gdrsvp_prepare_access_token($client_id, $client_secret, $access_token);
                     $listFeed = gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
-                    
+                    if (is_null($listFeed)) throw new Exception('Worksheet not found, check configuration for worksheet name', 111);
                     // CHECK, did they already fill out the form?
                     $entries = $listFeed->getEntries();
                     foreach ($entries as $e) {
@@ -718,6 +719,9 @@ function gdrsvp_my_googledocsrsvp ($text) {
 
                 } catch (Exception $e) {
                     $outputtext .= "<h6>Oops, there was a small glitch.</h6><p><em>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</em></p>";
+					if ($e->getCode() == 111) {
+						$outputtext .= " <b>Configuration Error: check worksheet name, etc..</b>";
+					}
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
                     $outputtext = add_guest_code_submission($outputtext);
                 }
@@ -733,7 +737,9 @@ function gdrsvp_my_googledocsrsvp ($text) {
                     // Prepare access token and retrieve the listFeed for your guestcode
                     gdrsvp_prepare_access_token($client_id, $client_secret, $access_token);
                     $listFeed = gdrsvp_get_listFeed_for_guestcode($access_token, $spreadsheet_name, $worksheet_name, $guest_code);
-
+					if (is_null($listFeed)) {
+						throw new Exception("listFeed is null", 111);
+					}
                     $already_replied = false;
                     // CHECK, did they already fill out the form?
                     $entries = $listFeed->getEntries();
@@ -840,6 +846,9 @@ function gdrsvp_my_googledocsrsvp ($text) {
 
                 } catch (Exception $e) {
                     $outputtext .= "<h6>Oops. You found an error.</h6><p><em>Please try again or contact " . $wedding_planner . " at <a href='mailto:". $wedding_planner_email_address ."'>". $wedding_planner_email_address ."</a> to confirm your response.</em></p>";
+					if ($e->getCode() == 111) {
+						$outputtext .= " <b>Configuration Error: check worksheet name, etc..</b>";
+					}
                     //$outputtext .= "<pre>" . $e->getMessage() . " " . $e->getTraceAsString() . "</pre>";
                     $outputtext = add_guest_code_submission($outputtext);
                 }
