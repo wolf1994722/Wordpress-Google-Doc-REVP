@@ -60,19 +60,3 @@ Note that you are required to have PHP version 5. Sorry, the only solution right
 # How do I change some of the text?
 
 If you cannot change the text in the options page, you can change it in the source code (by editting wp-gdrsvp-plugin.php). This is not a very safe thing to do, but you could search the code for the words you want to change and fiddle around with it. This take familiarity with HTML and a little PHP. 
-
-# License
-Copyright (C) 2008-2014 Gifford Cheung, Brian Watanabe, Chongsun Ahn
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
